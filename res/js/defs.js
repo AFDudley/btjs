@@ -407,18 +407,11 @@ var Game = {
     update: function() {
         var response = Services.battle.last_result();
         response.then(function(result){
+            
             if (!_.isEqual(result, Game.last_result)) {
                 console.log(PP(result));
-                var command_type = result.command.type;
-                if (command_type == "move") {
-                    
-                }
-                if (command_type == "attack") {
-                    
-                }
                 Game.last_last_result = Game.last_result;
                 Game.last_result = result;
-                
             }
         });
     }
