@@ -6,14 +6,11 @@ var GameState = {
     start_time: undefined,
     time_left: undefined,
     units: undefined,
-    HPs: undefined,
     whose_action: undefined,
     player: "",
     action_count: 1,
     ply_no: 1,
     turn_no: 1,
-    myUnits: undefined,
-    theirUnits: undefined,
     battlefield: undefined,
     last_result: { num: 0 },
     last_last_result: { num: 0 },
@@ -72,6 +69,7 @@ var GameState = {
             var t = new Date(1970, 0, 1);
             t.setSeconds(seconds);
             GameState.time_left_ply = t;
+            Field.update(); 
         });
     },
     
@@ -235,13 +233,6 @@ var GameState = {
         }
 
         return false;
-    },
-
-    print: function() {
-        console.log("userID        Loc Owner HPs");
-        for (var puserID in this.locs) {
-            console.log("\t" + puserID + ": " + this.locs[puserID] + " " + this.owners[puserID] + "\t" + this.HPs[puserID]);
-        }
     },
     
     move: function(args){
