@@ -239,7 +239,6 @@ var Field = {
                     this.attackable = null;
                     this.movable = null;
                     ui.setLeftUnit();
-                    //Field.update();
                 } else {
                     
                     // attack! even if it's our unit!
@@ -252,7 +251,6 @@ var Field = {
                                 targetLocation: [index[0], index[1]]
                             }).addCallback(function() {
                                 Field.computeRanges(index);
-                                //Field.update();
                             })
                         }
                     });
@@ -265,7 +263,6 @@ var Field = {
                 ui.selectedUnit = unit
                 ui.setLeftUnit(unit);
                 Field.computeRanges(index);
-                //Field.update();
             } else {
                 alert("That's not your unit");
             }
@@ -282,7 +279,6 @@ var Field = {
                         targetLocation: [index[0], index[1]]
                     }).addCallback(function() {
                         Field.computeRanges(index);
-                        //Field.update();
                     })
                 }
             });
@@ -291,11 +287,19 @@ var Field = {
     },
     
     computeRanges: function(index) {
-        var moveRange = GameState.battlefield.makeRange(index, ui.selectedUnit.move);
-        var occupied = new JS.Set(_.values(GameState.battlefield.locs));
-        this.weaponRange = GameState.battlefield.tilesInRangeOfWeapon(index, ui.selectedUnit.weapon);
-        this.attackable = this.weaponRange.intersection(occupied);
-        this.movable = moveRange.difference(occupied);
+        if (index) {
+            var moveRange = GameState.battlefield.makeRange(index, ui.selectedUnit.move);
+            var occupied = new JS.Set(_.values(GameState.battlefield.locs));
+            //BUGGY:wands don't have a range.
+            this.weaponRange = GameState.battlefield.tilesInRangeOfWeapon(index, ui.selectedUnit.weapon);
+            this.attackable = this.weaponRange.intersection(occupied);
+            this.movable = moveRange.difference(occupied);
+        } else { //HACK fix later.
+            ui.selectedunit = null;
+            this.attackable = null;
+            this.moveable = null;
+        }
+        this.update();
     },
     
     onTileOver: function(index) {
