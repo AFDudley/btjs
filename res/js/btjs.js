@@ -77,31 +77,25 @@ var GameState = {
         
         // ensure we have a result
         if (result) {
-            
             // has the result changed?
             if (!_.isEqual(result, GameState.last_result)) {
-            
                 // debug
                 //console.log(PP(result));
-            
                 // have any results been missed?
                 if (result.num === GameState.last_last_result.num + 1) {
-                    
                     // if not, just apply the result itself
                     GameState.applyResults(result);
                     GameState.updateActionNumber(result.num);
-                    
                 } else {
-                    
                     // process state because we missed some results
                     GameState.updateState();
                 }
-            
                 // pesist results
                 GameState.last_last_result = GameState.last_result;
                 GameState.last_result = result;
+                //Field.update();
+                Field.computeRanges();
             }
-            
             return result.result;
         }
     },
@@ -236,6 +230,7 @@ var GameState = {
     },
     
     move: function(args){
+        var self = this;
         var type = "move";
         var unitID = args.unitID || "";
         var targetLocation = args.targetLocation || [0,0];
@@ -248,28 +243,11 @@ var GameState = {
             targetLocation //Target
         ]);
         
-        action.addCallback(function(response){
-            //TODO Update Gamestage field -- (We'll get the field update on the next long poll)
-            if(response.response.result){
-                //TODO check for applied damage.
-                var unitID = response.response.result[0][0];
-                var targetLocation = response.response.result[0][1];
-                console.log("move result: " + targetLocation);
-                var unit = GameState.getUnitById(unitID);
-                console.log(unit);
-                if(unit){
-                    if(unit.scient){
-                        GameState.battlefield.move_scient(unitID, targetLocation);
-                        unit.scient.location = targetLocation;
-                    }else if(unit.nescient){
-                        unit.nescient.location = targetLocation;
-                    }
-                }
-                ui.setLeftUnit();
-                ui.setRightUnit();
+        action.addCallback(function(res){
+            var response = res.response;
+            if (response) {
+                var results = self.processActionResult(response);
             }
-            Field.update();
-            return response; 
         });
         
         action.addErrback(function(response){
@@ -315,12 +293,6 @@ var GameState = {
                     }
                 }
             }
-            
-            // why here?
-            // ui.setLeftUnit();
-            // ui.setRightUnit();
-            Field.update();
-            
             return response;
         });
         
@@ -333,17 +305,22 @@ var GameState = {
     },
     
     pass: function(args){
+        var self = this;
         var type = "pass";
-        
         var action = battleService.process_action([
             null,
             type, //Type
             null
         ]);
         
-        action.addCallback(function(response){
+        action.addCallback(function(res){
+            var response = res.response;
+            if (response) {
+                var results = self.processActionResult(response);
+            }
             ui.showMessage({message: "You have passed for one action."});
             return response; 
+            
         });
         
         action.addErrback(function(response){
