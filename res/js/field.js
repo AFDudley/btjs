@@ -6,6 +6,7 @@ var Field = {
     tiles: [],
     indicatorLayer: new Kinetic.Layer(),
     indicator: undefined,
+    changed: {}, //takes an index as a key and color as a value
     attackable: null,
     movable: null,
 
@@ -65,7 +66,12 @@ var Field = {
     },
 
     update: function() {
-        Field.clear();
+        /*
+        Tile changes should be placed into a "queue" and applied at once on
+        Field.update(). Which then reads the list of tiles and updates them.
+        and does not check every tile.
+        */
+        Field.clear(); 
         var tiles = Field.tiles;
 
         for (var i = 0; i < 16; i++) {
@@ -82,7 +88,6 @@ var Field = {
                 
                 if (GameState.battlefield) {
                     var unit = GameState.battlefield.getUnitByLocation([i, j]);
-                    
                     // do we have a unit?
                     if (unit) {
                         
@@ -162,7 +167,7 @@ var Field = {
                 Field.onTileOver.apply(this, [index]);
             }
         });
-        
+        //Color should be additive.
         this.setColor = function(layer, color) {
             this.shapes.get(layer)[0].setFill(color)
         }
@@ -220,7 +225,6 @@ var Field = {
     },
     
     onTileClick: function(index) {
-                
         // did we click on tile holding a unit?
         var unit = GameState.battlefield.getUnitByLocation(index);
         if (unit) {
@@ -235,20 +239,20 @@ var Field = {
                     this.attackable = null;
                     this.movable = null;
                     ui.setLeftUnit();
-                    Field.update();
+                    //Field.update();
                 } else {
                     
                     // attack! even if it's our unit!
                     ui.showConfirm({
                         header: "Action",
                         message: "Attack unit?",
-                        onconfirm: function() {                            
+                        onconfirm: function() { 
                             GameState.attack({
                                 unitID: ui.selectedUnit.ID,
                                 targetLocation: [index[0], index[1]]
                             }).addCallback(function() {
                                 Field.computeRanges(index);
-                                Field.update();
+                                //Field.update();
                             })
                         }
                     });
@@ -261,7 +265,7 @@ var Field = {
                 ui.selectedUnit = unit
                 ui.setLeftUnit(unit);
                 Field.computeRanges(index);
-                Field.update();
+                //Field.update();
             } else {
                 alert("That's not your unit");
             }
@@ -278,11 +282,12 @@ var Field = {
                         targetLocation: [index[0], index[1]]
                     }).addCallback(function() {
                         Field.computeRanges(index);
-                        Field.update();
+                        //Field.update();
                     })
                 }
             });
         }
+        Field.update()
     },
     
     computeRanges: function(index) {
