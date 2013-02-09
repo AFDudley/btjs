@@ -338,12 +338,11 @@ UI.prototype.authenticate = function() {
                     self.unitLeft.shape.setFill(colors_assignment[1]);
                 }
                 self.unitLeft.layer.draw();
-                Field.update();
+                GameState.update(); //This seems a little silly.
                 
                 // start updating
                 _intervalUpdateState = setInterval(function() {
                     GameState.update();
-                    Field.update();
                 }, 1000);
             });
         },
