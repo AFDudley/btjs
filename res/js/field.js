@@ -245,13 +245,9 @@ var Field = {
                     ui.showConfirm({
                         header: "Action",
                         message: "Attack unit?",
-                        onconfirm: function() { 
-                            GameState.attack({
-                                unitID: ui.selectedUnit.ID,
-                                targetLocation: [index[0], index[1]]
-                            }).addCallback(function() {
-                                Field.computeRanges(index);
-                            })
+                        onconfirm: function() {
+                            GameState.sendActionAndProcessResult(ui.selectedUnit.ID, "attack", index);
+                            Field.computeRanges(index);
                         }
                     });
                 }
@@ -274,12 +270,8 @@ var Field = {
                 header: "Action",
                 message: "Move unit?",
                 onconfirm: function() {
-                    GameState.move({
-                        unitID: ui.selectedUnit.ID,
-                        targetLocation: [index[0], index[1]]
-                    }).addCallback(function() {
-                        Field.computeRanges(index);
-                    })
+                    GameState.sendActionAndProcessResult(ui.selectedUnit.ID, "move", index);
+                    Field.computeRanges(index);
                 }
             });
         }

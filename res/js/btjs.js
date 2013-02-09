@@ -52,6 +52,7 @@ var GameState = {
         });
     },
     
+    //This is the long poll, will be replaced with web sockets.
     update: function() {
         var response = battleService.last_result();
         response.then(GameState.processActionResult);
@@ -163,7 +164,7 @@ var GameState = {
             }
         });
     },
-    
+    //only called in updatestate.
     updateUnitLocations: function(locs) {
         var change = false;
         for (var ID in locs) {
@@ -185,147 +186,40 @@ var GameState = {
         this.locs = locs;   // we should try to only have one reference to locs - is the right one in battlefield?
         return change;
     },
-    
-    getUnitById: function(id) {
-        if (this.units[id]) {
-            return this.units[id];
-        }
-
-        return false;
-    },
-    
-    getUnitByName: function(name) { //buggy?
-        for (var id in this.units) {
-            var unit = this.units[id];
-            if (unit.scient && unit.scient.name == name) return unit;
-            if (unit.nescient && unit.nescient.name == name) return unit;
-        }
-
-        return false;
-    },
-    
-    getUnitIdByName: function(name) {
-        for (var id in this.units) {
-            var unit = this.units[id];
-            if (unit.scient && unit.scient.name == name) return id;
-            if (unit.nescient && unit.nescient.name == name) return id;
-        }
-
-        return false;
-    },
-    
-    getUnitIdByContents: function(contents) {
-        if (contents.scient) return this.getUnitIdByName(contents.scient.name);
-        if (contents.nescient) return this.getUnitIdByName(contents.nescient.name);
-
-        return false;
-    },
-    
-    getUnitIdByLocation: function(x, y) {
-        for (var l in this.locs) {
-            if (this.locs[l][0] == x && this.locs[l][1] == y) return l;
-        }
-
-        return false;
-    },
-    
-    move: function(args){
+    //Rick: I suspect that the callback can just be added to process_action and this can be removed.
+    sendActionAndProcessResult: function(unitID, type, targetLocation) {
         var self = this;
-        var type = "move";
-        var unitID = args.unitID || "";
-        var targetLocation = args.targetLocation || [0,0];
-        
-        //Example 
-        //battleService.process_action(["48632008", "move", [2, 2]])
-        var action = battleService.process_action([
-            unitID, //Unit
-            type, //Type
-            targetLocation //Target
-        ]);
-        
-        action.addCallback(function(res){
+        var action = battleService.process_action([unitID, type, targetLocation]);
+        action.then(function(res){
             var response = res.response;
             if (response) {
                 var results = self.processActionResult(response);
-            }
-        });
-        
-        action.addErrback(function(response){
-            ui.showMessage({message: response});
-            return response;
-        });
-        
-        return action;
-    },
-    
-    attack: function(args){
-        var self = this;
-        var type = "attack";
-        var unitID = args.unitID || "";
-        var targetLocation = args.targetLocation || [0,0];
-        
-        //Example???
-        //battleService.process_action(["48632008", "attack", [2, 2]])
-        var action = battleService.process_action([
-            unitID, //Unit
-            type, //Type
-            targetLocation //Target
-        ]);
-        
-        action.addCallback(function(res){
-            var response = res.response;
-            if (response) {
-                var results = self.processActionResult(response);
-            
-                if (results) {
+                if(results) {
                     var messages = [];
-                    for (var r in results) {
-                        var result = results[r];
-                        var ID = result[0];
-                        var damage = result[1];
-                        var unit = GameState.battlefield.units[ID];
-                        if (damage === "Dead.") {
-                            messages.push(unit.owner + "'s " + unit.name + " defeated.");
-                        } else {
-                            messages.push(unit.owner + "'s " + unit.name + " took " + damage + " damage.");
+                    if (type == "attack") {
+                        for (var r in results) {
+                            var result = results[r];
+                            var ID = result[0];
+                            var damage = result[1];
+                            var unit = GameState.battlefield.units[ID];
+                            if (damage === "Dead.") {
+                                messages.push(unit.owner + "'s " + unit.name + " is dead.");
+                            } else {
+                                messages.push(unit.owner + "'s " + unit.name + " took " + damage + " damage.");
+                            }
                         }
-                        ui.showMessage({ message: messages.join("<br>") });
+                    } else if (type == "move") {
+                        messages.push("Something moved.");
+                    } else {
+                        messages.push("You have passed for one action.");
                     }
+                    ui.showMessage({ message: messages.join("<br>") });
                 }
             }
-            return response;
-        });
-        
-        action.addErrback(function(response){
+        }, function(err) {
             ui.showMessage({message: response});
             return response;
         });
-        
         return action;
     },
-    
-    pass: function(args){
-        var self = this;
-        var type = "pass";
-        var action = battleService.process_action([
-            null,
-            type, //Type
-            null
-        ]);
-        
-        action.addCallback(function(res){
-            var response = res.response;
-            if (response) {
-                var results = self.processActionResult(response);
-            }
-            ui.showMessage({message: "You have passed for one action."});
-            return response; 
-            
-        });
-        
-        action.addErrback(function(response){
-            ui.showMessage({message: response});
-            return response;
-        });
-    }
 };

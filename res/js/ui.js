@@ -256,7 +256,7 @@ function UI() {
             header: "Pass",
             message: "Are you sure?",
             onconfirm: function() {
-                GameState.pass();
+                GameState.sendActionAndProcessResult(null, "pass", null);
             }
         });
     });
